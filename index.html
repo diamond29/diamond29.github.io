@@ -5,7 +5,7 @@
 <title>Treasure hunter</title>
 </head>
 <body>
-<script src="./pixi/pixi.min.js"></script>
+<script src="../pixi/pixi.min.js"></script>
 <script>
 
 //Aliases
@@ -16,6 +16,7 @@ const Application = PIXI.Application,
     Graphics = PIXI.Graphics,
     TextureCache = PIXI.utils.TextureCache,
     Sprite = PIXI.Sprite,
+    AnimatedSprite = PIXI.AnimatedSprite,
     Text = PIXI.Text,
     TextStyle = PIXI.TextStyle;
 
@@ -33,47 +34,103 @@ const app = new Application({
 document.body.appendChild(app.view);
 
 loader
-  .add("./examples/images/treasureHunter.json")
+  .add("examples/images/treasureHunter.json")
   .load(setup);
 
 //Define variables that might be used in more 
 //than one function
 let state, explorer, treasure, blobs, chimes, exit, player, dungeon,
-    door, healthBar, message, gameScene, gameOverScene, enemies, id, moveSpacesContainer, currentMoveSpacesContainer;
+    door, healthBar, message, gameScene, gameOverScene, enemies, id;
 
-function drawGrid(gameScene, gridHeight, gridWidth) {
-  xWidth = gameScene.width / gridWidth
-  yWidth = gameScene.height / gridHeight
+let directions = ['left', 'right', 'up', 'down']
+let explorerSizeModifier = .75
+let maxPlayerVelocity = 5
+let acceleration = .6
+let reverseAccelerationFactor = 4
 
-  for (let i = 1; i < gridWidth; i++) {
-    line = new Graphics()
-    line.lineStyle({width: 2, color: 0x000000, alpha: 1});
-    line.moveTo(0, 0);
-    line.lineTo(0, gameScene.height);
+  //Capture the keyboard arrow keys
+const leftKey = keyboard(37),
+    upKey = keyboard(38),
+    rightKey = keyboard(39),
+    downKey = keyboard(40);
 
-    line.x = i * xWidth
-    gameScene.addChild(line)
+function setupExplorer() {
+  for (d of directions) {
+    walkAnimation = new AnimatedSprite(animations["walk" + d])
+    walkAnimation.animationSpeed = .15
+    walkAnimation.visible = false
+    walkAnimation.width = walkAnimation.width * explorerSizeModifier
+    walkAnimation.height = walkAnimation.height * explorerSizeModifier
+
+
+    explorer.addChild(walkAnimation)
+
+    faceSprite = new Sprite(id["face" + d + ".png"])
+    faceSprite.visible = false
+    faceSprite.width = faceSprite.width * explorerSizeModifier
+    faceSprite.height = faceSprite.height * explorerSizeModifier
+    explorer.addChild(faceSprite)
+
+    explorer[d] = { face: faceSprite, walk: walkAnimation }
   }
 
-  for (let i = 1; i < gridHeight; i++) {
-    line = new Graphics()
-    line.lineStyle({width: 2, color: 0x000000, alpha: 1});
-    line.moveTo(0, 0);
-    line.lineTo(gameScene.width, 0);
+  explorer.currentAnimation = explorer['down'].face
+  explorer.currentAnimation.visible = true
+  explorer.direction = 'down'
+  
+  if (false) {
+    graphics = new PIXI.Graphics();
+    graphics.lineStyle(1, 0xFF0000);
+    graphics.drawRect(0, 0, explorer.width, explorer.height);
+    explorer.addChild(graphics);
+  }
+}
+function setDirectionToAnySingleKeyThatIsCurrentlyDown() {
+  count = 0
+  count += leftKey.isDown ? 1 : 0
+  count += rightKey.isDown ? 1 : 0
+  count += downKey.isDown ? 1 : 0
+  count += upKey.isDown ? 1 : 0
 
-    line.y = i * yWidth
-    gameScene.addChild(line)
+  if (count > 1) {
+    return 
+  }
+
+  if (leftKey.isDown) {
+    explorer.direction = "left"
+  } else if (rightKey.isDown) {
+    explorer.direction = "right"
+  } else if (upKey.isDown) {
+    explorer.direction = "up"
+  } else if (downKey.isDown) {
+    explorer.direction = "down"
   }
 }
 
-let xWidth = 0
-let yWidth = 0
-let grid = []
-let gridWidth = 16,
-  gridHeight = 16;
+function setExplorerAnimation() {
+  directionalChoice = explorer[explorer.direction]
+  if (explorer.vx != 0 || explorer.vy != 0) {
+    newAnimation = directionalChoice.walk
+  } else {
 
-function gridPositionFromPoint(x, y) {
-  return { x: Math.floor(x / xWidth), y: Math.floor(y / yWidth) }
+    newAnimation = directionalChoice.face
+  }
+
+  if (newAnimation === explorer.currentAnimation) {
+    return
+  }
+
+  explorer.currentAnimation.visible = false
+  if (explorer.currentAnimation instanceof AnimatedSprite) {
+    explorer.currentAnimation.stop()
+  }
+
+  newAnimation.visible = true
+  if (newAnimation instanceof AnimatedSprite) {
+    newAnimation.gotoAndPlay(0)
+  }
+
+  explorer.currentAnimation = newAnimation
 }
 
 function setup() {
@@ -81,32 +138,15 @@ function setup() {
   //Make the game scene and add it to the stage
   gameScene = new Container();
   app.stage.addChild(gameScene);
-  gameScene.interactive = true
-  gameScene.on("click", (event) => {
-    ({ x, y } = gridPositionFromPoint(event.data.global.x, event.data.global.y))
 
-    if (explorer.isMoving === false && (Math.abs(explorer.xIndex - x) + Math.abs(explorer.yIndex - y)) <= 2) {
-      explorer.newXIndex = x
-      explorer.newYIndex = y
-      explorer.isMoving = true
-    }
-  })
-
-  grid = [...Array(gridWidth)].map(e => Array(gridHeight));
-
+  //Make the sprites and add them to the `gameScene`
   //Create an alias for the texture atlas frame ids
-  id = resources["./examples/images/treasureHunter.json"].textures;
+  id = resources["examples/images/treasureHunter.json"].textures;
+  animations = resources["examples/images/treasureHunter.json"].spritesheet.animations
 
   //Dungeon
   dungeon = new Sprite(id["dungeon.png"]);
-  moveSpacesContainer = new Container()
-  dungeon.addChild(moveSpacesContainer)
-
   gameScene.addChild(dungeon);
-
-  if (true) {
-    drawGrid(gameScene, gridWidth, gridHeight)
-  }
 
   //Door
   door = new Sprite(id["door.png"]); 
@@ -114,11 +154,17 @@ function setup() {
   gameScene.addChild(door);
 
   //Explorer
-  explorer = new Sprite(id["explorer.png"]);
+  //explorer = new Sprite(id["explorer.png"]);
+  explorer = new Container();
+  setupExplorer()
 
-  explorer.xIndex = 2
-  explorer.yIndex = 2
-  explorer.isMoving = false
+  explorer.x = 68;
+  explorer.y = gameScene.height / 2 - explorer.height / 2;
+  explorer.vx = 0;
+  explorer.vy = 0;
+  explorer.ax = 0;
+  explorer.ay = 0;
+
   gameScene.addChild(explorer);
   
   //Treasure
@@ -130,8 +176,10 @@ function setup() {
   //Make the blobs
   let numberOfBlobs = 6,
       spacing = 48,
-      xOffset = 150;
-  
+      xOffset = 150,
+      speed = 2,
+      direction = 1;
+
   //An array to store all the blob monsters
   blobs = [];
 
@@ -139,16 +187,28 @@ function setup() {
   for (let i = 0; i < numberOfBlobs; i++) {
 
     //Make a blob
-    const blob = new Sprite(id["covid.png"]);
+    const blob = new Sprite(id["blob.png"]);
 
-    const yIndex = randomInt(4, 16);
-    const xIndex = randomInt(4, 16);
+    //Space each blob horizontally according to the `spacing` value.
+    //`xOffset` determines the point from the left of the screen
+    //at which the first blob should be added
+    const x = spacing * i + xOffset;
 
-    blob.x = xIndex * xWidth;
-    blob.y = yIndex * yWidth;
-    
-    blob.width = xWidth
-    blob.height = yWidth
+    //Give the blob a random y position
+    const y = randomInt(0, app.stage.height - blob.height);
+
+    //Set the blob's position
+    blob.x = x;
+    blob.y = y;
+
+    //Set the blob's vertical velocity. `direction` will be either `1` or
+    //`-1`. `1` means the enemy will move down and `-1` means the blob will
+    //move up. Multiplying `direction` by `speed` determines the blob's
+    //vertical direction
+    blob.vy = speed * direction;
+
+    //Reverse the direction for the next blob
+    direction *= -1;
 
     //Push the blob into the `blobs` array
     blobs.push(blob);
@@ -169,6 +229,15 @@ function setup() {
   innerBar.endFill();
   healthBar.addChild(innerBar);
 
+  //Create the front red rectangle
+  const outerBar = new Graphics();
+  outerBar.beginFill(0xFF3300);
+  outerBar.drawRect(0, 0, 128, 8);
+  outerBar.endFill();
+  healthBar.addChild(outerBar);
+
+  healthBar.outer = outerBar;
+
   //Create the `gameOver` scene
   gameOverScene = new Container();
   app.stage.addChild(gameOverScene);
@@ -187,98 +256,197 @@ function setup() {
   message.y = app.stage.height / 2 - 32;
   gameOverScene.addChild(message);
 
+  setDirection = function() {
+  }
+
+  leftKey.press = function() {
+    explorer.direction = 'left'
+  };
+
+  leftKey.release = function() {
+    
+  };
+
+  //Right
+  rightKey.press = function() {
+    explorer.direction = 'right'
+  };
+  rightKey.release = function() {
+  };
+
+  //Up
+  upKey.press = function() {
+    explorer.direction = 'up'
+  };
+  upKey.release = function() {
+  };
+
+  //Down
+  downKey.press = function() {
+    explorer.direction = 'down'
+  };
+  downKey.release = function() {
+  };
+
   //Set the game state
   state = play;
  
+  app.ticker.deltaTime = 4
   //Start the game loop 
   app.ticker.add((delta) => gameLoop(delta));
+
 }
 
-
 function gameLoop(delta) {
-
-  //Update the current game state:
   state(delta);
 }
 
-maxSpeed = 2
-
-function newPointFromCurrentAndDestination(currentPoint, destinationPoint, speed) {
-  xDistance = destinationPoint.x - currentPoint.x
-  yDistance = destinationPoint.y - currentPoint.y
-
-  totalDistance = Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2))
-
-  if (totalDistance < speed) {
-    return destinationPoint
-  } else {
-    ratio = speed / totalDistance
-
-    return {x: currentPoint.x + xDistance * ratio, y: currentPoint.y + yDistance * ratio}
-  }
-}
-
 function play(delta) {
-  if (explorer.isMoving) {
-    destinationX = xWidth * explorer.newXIndex + explorer.width / 4
-    destinationY = yWidth * explorer.newYIndex
-    destinationPoint = {x: destinationX, y: destinationY}
-    currentPoint = {x: explorer.x, y: explorer.y}
+  setDirectionToAnySinglKeyThatIsCurrentlyDown()
+  setExplorerAnimation()
 
-    newPoint = newPointFromCurrentAndDestination(currentPoint, destinationPoint, 2)
-
-    explorer.x = newPoint.x
-    explorer.y = newPoint.y
-
-    if (newPoint === destinationPoint) {
-      explorer.isMoving = false
-      explorer.xIndex = explorer.newXIndex
-      explorer.yIndex = explorer.newYIndex
+  if (leftKey.isDown) {
+    if (explorer.vx <= 0) {
+      if (Math.abs(explorer.vx - acceleration ) < maxPlayerVelocity) {
+        explorer.vx -= acceleration
+      } 
+    } else {
+      explorer.vx -= acceleration * reverseAccelerationFactor
     }
-    currentMoveSpacesContainer.visible = false
-  } else {
-    explorer.x = xWidth * explorer.xIndex + explorer.width / 4
-    explorer.y = yWidth * explorer.yIndex
   }
 
-  moveLimit = 2
-  if (currentMoveSpacesContainer !== undefined
-   && (currentMoveSpacesContainer.xIndex != explorer.xIndex
-   || currentMoveSpacesContainer.yIndex != explorer.yIndex)) {
-     console.log("removed movespaces")
-    moveSpacesContainer.removeChild(currentMoveSpacesContainer)
-    currentMoveSpacesContainer = undefined
+  if (rightKey.isDown) {
+    if (explorer.vx >= 0) {
+      if (Math.abs(explorer.vx + acceleration) < maxPlayerVelocity) {
+        explorer.vx += acceleration
+      }
+    } else {
+      explorer.vx += acceleration * reverseAccelerationFactor
+    }
   }
 
-  if (currentMoveSpacesContainer === undefined && !explorer.isMoving) {
-    currentMoveSpacesContainer = new Container()
-  
-    let moveSpaces = []
-  
-    for(let i = moveLimit * -1; i <= moveLimit; i++) {
-      for(let j = (moveLimit - Math.abs(i)) * -1; j <= (moveLimit - Math.abs(i)); j++) {
-        moveSpaces = [...moveSpaces, [i + explorer.xIndex, j + explorer.yIndex]]
+  //if not attempting to move, try to reverse direction and get back to zero
+  if (leftKey.isUp && rightKey.isUp && explorer.vx != 0) {
+    if (explorer.vx > 0) {
+      if (explorer.vx - acceleration * reverseAccelerationFactor < 0) {
+        explorer.vx = 0
+      } else {
+        explorer.vx -= acceleration * reverseAccelerationFactor
+      }
+    } else {
+      if (explorer.vx + acceleration * reverseAccelerationFactor > 0) {
+        explorer.vx = 0
+      } else {
+        explorer.vx += acceleration * reverseAccelerationFactor
       }
     }
-  
-    for (const spaceCoords of moveSpaces) {
-      const space = new Graphics();
-      space.beginFill(0x8B0000, 0.5);
-      space.drawRect(0, 0, xWidth, yWidth);
-      space.endFill();
-  
-      space.x = xWidth * spaceCoords[0]
-      space.y = yWidth * spaceCoords[1]
-  
-      currentMoveSpacesContainer.addChild(space)
-    }
-
-    currentMoveSpacesContainer.xIndex = explorer.xIndex
-    currentMoveSpacesContainer.yIndex = explorer.yIndex
-  
-    moveSpacesContainer.addChild(currentMoveSpacesContainer)
   }
 
+  if (upKey.isDown) {
+    if (explorer.vy <= 0) {
+      if (Math.abs(explorer.vy - acceleration ) < maxPlayerVelocity) {
+        explorer.vy -= acceleration
+      } 
+    } else {
+      explorer.vy -= acceleration * reverseAccelerationFactor
+    }
+  }
+
+  if (downKey.isDown) {
+    if (explorer.vy >= 0) {
+      if (Math.abs(explorer.vy + acceleration) < maxPlayerVelocity) {
+        explorer.vy += acceleration
+      }
+    } else {
+      explorer.vy += acceleration * reverseAccelerationFactor
+    }
+  }
+
+  //if not attempting to move, try to reverse direction and get back to zero
+  if (upKey.isUp && downKey.isUp && explorer.vy != 0) {
+    if (explorer.vy > 0) {
+      if (explorer.vy - acceleration * reverseAccelerationFactor < 0) {
+        explorer.vy = 0
+      } else {
+        explorer.vy -= acceleration * reverseAccelerationFactor
+      }
+    } else {
+      if (explorer.vy + acceleration * reverseAccelerationFactor > 0) {
+        explorer.vy = 0
+      } else {
+        explorer.vy += acceleration * reverseAccelerationFactor
+      }
+    }
+  }
+
+  //use the explorer's velocity to make it move
+  explorer.x += explorer.vx;
+  explorer.y += explorer.vy;
+
+  //Contain the explorer inside the area of the dungeon
+  contain(explorer, {x: 10, y: 10, width: 500, height: 500});
+
+  //Set `explorerHit` to `false` before checking for a collision
+  let explorerHit = false;
+
+  //Loop through all the sprites in the `enemies` array
+  blobs.forEach(function(blob) {
+
+    //Move the blob
+    blob.y += blob.vy;
+
+    //Check the blob's screen boundaries
+    const blobHitsWall = contain(blob, {x: 28, y: 10, width: 488, height: 480});
+
+    //If the blob hits the top or bottom of the stage, reverse
+    //its direction
+    if (blobHitsWall === "top" || blobHitsWall === "bottom") {
+      blob.vy *= -1;
+    }
+
+    //Test for a collision. If any of the enemies are touching
+    //the explorer, set `explorerHit` to `true`
+    if (hitTestRectangle(explorer, blob)) {
+      explorerHit = true;
+    }
+  });
+
+  //If the explorer is hit...
+  if (explorerHit) {
+
+    //Make the explorer semi-transparent
+    explorer.alpha = 0.5;
+
+    //Reduce the width of the health bar's inner rectangle by 1 pixel
+    healthBar.outer.width -= 1;
+
+  } else {
+
+    //Make the explorer fully opaque (non-transparent) if it hasn't been hit
+    explorer.alpha = 1;
+  }
+
+  //Check for a collision between the explorer and the treasure
+  if (hitTestRectangle(explorer, treasure)) {
+
+    //If the treasure is touching the explorer, center it over the explorer
+    treasure.x = explorer.x + 8;
+    treasure.y = explorer.y + 8;
+  }
+
+  //Does the explorer have enough health? If the width of the `innerBar`
+  //is less than zero, end the game and display "You lost!"
+  if (healthBar.outer.width < 0) {
+    state = end;
+    message.text = "You lost!";
+  }
+
+  //If the explorer has brought the treasure to the exit,
+  //end the game and display "You won!"
+  if (hitTestRectangle(treasure, door)) {
+    state = end;
+    message.text = "You won!";
+  } 
 }
 
 function end() {
@@ -286,6 +454,98 @@ function end() {
   gameOverScene.visible = true;
 }
 
+/* Helper functions */
+
+function contain(sprite, container) {
+
+  let collision = undefined;
+
+  //Left
+  if (sprite.x < container.x) {
+    sprite.x = container.x;
+    sprite.ax = 0
+    collision = "left";
+  }
+
+  //Top
+  if (sprite.y < container.y) {
+    sprite.y = container.y;
+    sprite.ay = 0
+    collision = "top";
+  }
+
+  //Right
+  if (sprite.x + sprite.width > container.width) {
+    sprite.x = container.width - sprite.width;
+    sprite.ax = 0
+    collision = "right";
+  }
+
+  //Bottom
+  if (sprite.y + sprite.height > container.height) {
+    sprite.y = container.height - sprite.height;
+    sprite.ay = 0
+    collision = "bottom";
+  }
+
+  //Return the `collision` value
+  return collision;
+}
+
+//The `hitTestRectangle` function
+function hitTestRectangle(r1, r2) {
+
+  //Define the variables we'll need to calculate
+  let hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
+
+  //hit will determine whether there's a collision
+  hit = false;
+
+  //Find the center points of each sprite
+  r1.centerX = r1.x + r1.width / 2; 
+  r1.centerY = r1.y + r1.height / 2; 
+  r2.centerX = r2.x + r2.width / 2; 
+  r2.centerY = r2.y + r2.height / 2; 
+
+  //Find the half-widths and half-heights of each sprite
+  r1.halfWidth = r1.width / 2;
+  r1.halfHeight = r1.height / 2;
+  r2.halfWidth = r2.width / 2;
+  r2.halfHeight = r2.height / 2;
+
+  //Calculate the distance vector between the sprites
+  vx = r1.centerX - r2.centerX;
+  vy = r1.centerY - r2.centerY;
+
+  //Figure out the combined half-widths and half-heights
+  combinedHalfWidths = r1.halfWidth + r2.halfWidth;
+  combinedHalfHeights = r1.halfHeight + r2.halfHeight;
+
+  //Check for a collision on the x axis
+  if (Math.abs(vx) < combinedHalfWidths) {
+
+    //A collision might be occurring. Check for a collision on the y axis
+    if (Math.abs(vy) < combinedHalfHeights) {
+
+      //There's definitely a collision happening
+      hit = true;
+    } else {
+
+      //There's no collision on the y axis
+      hit = false;
+    }
+  } else {
+
+    //There's no collision on the x axis
+    hit = false;
+  }
+
+  //`hit` will be either `true` or `false`
+  return hit;
+};
+
+
+//The `randomInt` helper function
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
