@@ -54,6 +54,13 @@ const leftKey = keyboard(37),
     rightKey = keyboard(39),
     downKey = keyboard(40);
 
+function drawRectAroundExplorer() {
+  graphics = new PIXI.Graphics();
+  graphics.lineStyle(1, 0xFF0000);
+  graphics.drawRect(0, 0, explorer.width, explorer.height);
+  explorer.addChild(graphics);
+}
+
 function setupExplorer() {
   for (d of directions) {
     walkAnimation = new AnimatedSprite(animations["walk" + d])
@@ -79,12 +86,10 @@ function setupExplorer() {
   explorer.direction = 'down'
   
   if (false) {
-    graphics = new PIXI.Graphics();
-    graphics.lineStyle(1, 0xFF0000);
-    graphics.drawRect(0, 0, explorer.width, explorer.height);
-    explorer.addChild(graphics);
+    drawRectAroundExplorer()
   }
 }
+
 function setDirectionToAnySingleKeyThatIsCurrentlyDown() {
   count = 0
   count += leftKey.isDown ? 1 : 0
@@ -107,31 +112,6 @@ function setDirectionToAnySingleKeyThatIsCurrentlyDown() {
   }
 }
 
-function setExplorerAnimation() {
-  directionalChoice = explorer[explorer.direction]
-  if (explorer.vx != 0 || explorer.vy != 0) {
-    newAnimation = directionalChoice.walk
-  } else {
-
-    newAnimation = directionalChoice.face
-  }
-
-  if (newAnimation === explorer.currentAnimation) {
-    return
-  }
-
-  explorer.currentAnimation.visible = false
-  if (explorer.currentAnimation instanceof AnimatedSprite) {
-    explorer.currentAnimation.stop()
-  }
-
-  newAnimation.visible = true
-  if (newAnimation instanceof AnimatedSprite) {
-    newAnimation.gotoAndPlay(0)
-  }
-
-  explorer.currentAnimation = newAnimation
-}
 
 function setup() {
 
@@ -301,10 +281,33 @@ function gameLoop(delta) {
   state(delta);
 }
 
-function play(delta) {
-  setDirectionToAnySingleKeyThatIsCurrentlyDown()
-  setExplorerAnimation()
+function setExplorerAnimation() {
+  directionalChoice = explorer[explorer.direction]
+  if (explorer.vx != 0 || explorer.vy != 0) {
+    newAnimation = directionalChoice.walk
+  } else {
 
+    newAnimation = directionalChoice.face
+  }
+
+  if (newAnimation === explorer.currentAnimation) {
+    return
+  }
+
+  explorer.currentAnimation.visible = false
+  if (explorer.currentAnimation instanceof AnimatedSprite) {
+    explorer.currentAnimation.stop()
+  }
+
+  newAnimation.visible = true
+  if (newAnimation instanceof AnimatedSprite) {
+    newAnimation.gotoAndPlay(0)
+  }
+
+  explorer.currentAnimation = newAnimation
+}
+
+function setNewExplorerVelocityBasedOnKeys() {
   if (leftKey.isDown) {
     if (explorer.vx <= 0) {
       if (Math.abs(explorer.vx - acceleration ) < maxPlayerVelocity) {
@@ -378,6 +381,12 @@ function play(delta) {
       }
     }
   }
+}
+
+function play(delta) {
+  setDirectionToAnySingleKeyThatIsCurrentlyDown()
+  setNewExplorerVelocityBasedOnKeys()
+  setExplorerAnimation()
 
   //use the explorer's velocity to make it move
   explorer.x += explorer.vx;
