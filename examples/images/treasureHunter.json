@@ -18,7 +18,7 @@
 },
 "dungeon.png":
 {
-	"frame": {"x":0,"y":132,"w":512,"h":512},
+	"frame": {"x":0,"y":143,"w":512,"h":512},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":512,"h":512},
@@ -199,6 +199,14 @@
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":34,"h":64},
 	"sourceSize": {"w":34,"h":64}
+},
+"wooden_stairs-1.png":
+{
+	"frame": {"x":352,"y":64,"w":44,"h":79},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":44,"h":79},
+	"sourceSize": {"w":44,"h":79}
 }},
 "animations": {
 	"walkdown": ["walkdown_01.png","walkdown_02.png","walkdown_03.png","walkdown_04.png"],
@@ -211,8 +219,8 @@
 	"version": "1.0",
 	"image": "treasureHunter.png",
 	"format": "RGBA8888",
-	"size": {"w":512,"h":644},
+	"size": {"w":512,"h":655},
 	"scale": "1",
-	"smartupdate": "$TexturePacker:SmartUpdate:5e0b9f7b30b025cad892b61cd0a1e85c:378f42ff9bfd9cd28784d9e0f36425b5:9995f8b4db1ac3cb75651b1542df8ee2$"
+	"smartupdate": "$TexturePacker:SmartUpdate:d27766e32bf5e92a08accfe472f6caf4:390a151a6f995f67ee584c9563da3fbe:9995f8b4db1ac3cb75651b1542df8ee2$"
 }
 }
