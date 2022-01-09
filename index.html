@@ -69,7 +69,6 @@ function setupExplorer() {
     walkAnimation.width = walkAnimation.width * explorerSizeModifier
     walkAnimation.height = walkAnimation.height * explorerSizeModifier
 
-
     explorer.addChild(walkAnimation)
 
     faceSprite = new Sprite(id["face" + d + ".png"])
@@ -81,9 +80,9 @@ function setupExplorer() {
     explorer[d] = { face: faceSprite, walk: walkAnimation }
   }
 
-  explorer.currentAnimation = explorer['down'].face
+  explorer.currentAnimation = explorer['up'].face
   explorer.currentAnimation.visible = true
-  explorer.direction = 'down'
+  explorer.direction = 'up'
   
   if (false) {
     drawRectAroundExplorer()
@@ -112,7 +111,6 @@ function setDirectionToAnySingleKeyThatIsCurrentlyDown() {
   }
 }
 
-
 function setup() {
 
   //Make the game scene and add it to the stage
@@ -133,8 +131,6 @@ function setup() {
   door.position.set(32, 0);
   gameScene.addChild(door);
 
-  //Explorer
-  //explorer = new Sprite(id["explorer.png"]);
   explorer = new Container();
   setupExplorer()
 
@@ -142,8 +138,6 @@ function setup() {
   explorer.y = gameScene.height / 2 - explorer.height / 2;
   explorer.vx = 0;
   explorer.vy = 0;
-  explorer.ax = 0;
-  explorer.ay = 0;
 
   gameScene.addChild(explorer);
   
@@ -171,9 +165,6 @@ function setup() {
   message.x = 120;
   message.y = app.stage.height / 2 - 32;
   gameOverScene.addChild(message);
-
-  setDirection = function() {
-  }
 
   leftKey.press = function() {
     explorer.direction = 'left'
@@ -222,7 +213,6 @@ function setExplorerAnimation() {
   if (explorer.vx != 0 || explorer.vy != 0) {
     newAnimation = directionalChoice.walk
   } else {
-
     newAnimation = directionalChoice.face
   }
 
@@ -360,28 +350,24 @@ function contain(sprite, container) {
   //Left
   if (sprite.x < container.x) {
     sprite.x = container.x;
-    sprite.ax = 0
     collision = "left";
   }
 
   //Top
   if (sprite.y < container.y) {
     sprite.y = container.y;
-    sprite.ay = 0
     collision = "top";
   }
 
   //Right
   if (sprite.x + sprite.width > container.width) {
     sprite.x = container.width - sprite.width;
-    sprite.ax = 0
     collision = "right";
   }
 
   //Bottom
   if (sprite.y + sprite.height > container.height) {
     sprite.y = container.height - sprite.height;
-    sprite.ay = 0
     collision = "bottom";
   }
 
