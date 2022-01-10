@@ -7,6 +7,35 @@
 <body>
 <script src="../pixi/pixi.min.js"></script>
 <script>
+async function loadFileFromServer(fileLocation) {
+  console.log("loading " + fileLocation)
+  return fetch(window.location.toString() + fileLocation)
+    .then(response => response.text())
+}
+
+async function main() {
+desertMapXmlDoc = new DOMParser().parseFromString(await loadFileFromServer("examples/images/level/testing.tmx"), "text/xml")
+tileMetadataFileName = desertMapXmlDoc.getElementsByTagName("map")[0].getElementsByTagName("tileset")[0].getAttribute("source")
+tileListRaw = desertMapXmlDoc.getElementsByTagName("map")[0].getElementsByTagName("layer")[0].getElementsByTagName("data")[0].innerHTML
+splitTileList = tileListRaw.split("\n")
+let tileList = []
+for (row of splitTileList.slice(1, splitTileList.length - 1)) {
+  splitRow = row.split(",")
+  if (splitRow[splitRow.length - 1] === "") {
+    splitRow = splitRow.slice(0, splitRow.length - 1)
+  }
+  tileList.push(splitRow)
+}
+console.log(tileList)
+
+metadataXml = new DOMParser().parseFromString(await loadFileFromServer("examples/images/level/" + tileMetadataFileName), "text/xml")
+tileSheetMetadata = metadataXml.getElementsByTagName("tileset")[0]
+
+let tileWidth = tileSheetMetadata.getAttribute("tileWidth")
+let tileHeight = tileSheetMetadata.getAttribute("tileWidth")
+let tileSpacing = tileSheetMetadata.getAttribute("spacing")
+let tileColumns = tileSheetMetadata.getAttribute("columns")
+tileSheetFileName = tileSheetMetadata.getElementsByTagName("image")[0].getAttribute("source")
 
 //Aliases
 const Application = PIXI.Application,
@@ -18,7 +47,9 @@ const Application = PIXI.Application,
     Sprite = PIXI.Sprite,
     AnimatedSprite = PIXI.AnimatedSprite,
     Text = PIXI.Text,
-    TextStyle = PIXI.TextStyle;
+    TextStyle = PIXI.TextStyle,
+    Rectangle = PIXI.Rectangle,
+    Texture = PIXI.Texture;
 
 //Create a Pixi Application
 const app = new Application({ 
@@ -35,6 +66,7 @@ document.body.appendChild(app.view);
 
 loader
   .add("examples/images/treasureHunter.json")
+  .add("examples/images/level/" + tileSheetFileName)
   .load(setup);
 
 //Define variables that might be used in more 
@@ -111,6 +143,24 @@ function setDirectionToAnySingleKeyThatIsCurrentlyDown() {
   }
 }
 
+function getSpriteFromId(id) {
+  id -= 1
+  rowNumber = Math.floor(id / tileColumns)
+  columnNumber = id - rowNumber * tileColumns
+  console.log("id " + id)
+  console.log("tile columns " + tileColumns)
+  console.log("row number " + rowNumber)
+  console.log("column number " + columnNumber)
+
+  horizontalSpacing = 1 + columnNumber
+  verticalSpacing = 1 + rowNumber
+
+  xPosition = horizontalSpacing + columnNumber * 32
+  yPosition = verticalSpacing + rowNumber * 32
+
+  return new Sprite(new Texture(resources["examples/images/level/tmw_desert_spacing.png"].texture, new Rectangle(xPosition, yPosition, 32, 32)))
+}
+
 function setup() {
 
   //Make the game scene and add it to the stage
@@ -123,8 +173,20 @@ function setup() {
   animations = resources["examples/images/treasureHunter.json"].spritesheet.animations
 
   //Dungeon
-  dungeon = new Sprite(id["dungeon.png"]);
-  gameScene.addChild(dungeon);
+  let yPosition = 0
+  for (tRow of tileList) {
+    let xPosition = 0
+    for (tileId of tRow) {        
+      sprite = getSpriteFromId(parseInt(tileId))
+      sprite.x = xPosition
+      sprite.y = yPosition
+      gameScene.addChild(sprite)
+      xPosition += 32
+    }
+    yPosition += 32
+  }
+  //dungeon = new Sprite(id["dungeon.png"]);
+  //gameScene.addChild(dungeon);
 
   //Door
   door = new Sprite(id["door.png"]); 
@@ -470,6 +532,9 @@ function keyboard(keyCode) {
   window.addEventListener("keyup", key.upHandler.bind(key), false);
   return key;
 }
+}
+
+main()
 
 </script>
 </body>
