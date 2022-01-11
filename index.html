@@ -8,7 +8,7 @@
 <script src="../pixi/pixi.min.js"></script>
 <script>
 async function loadFileFromServer(fileLocation) {
-  return fetch(window.location.toString() + fileLocation)
+  return fetch(window.location.toString() + fileLocation + "?" + Date.now())
     .then(response => response.text())
 }
 
