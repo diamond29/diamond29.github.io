@@ -8,7 +8,6 @@
 <script src="../pixi/pixi.min.js"></script>
 <script>
 async function loadFileFromServer(fileLocation) {
-  console.log("loading " + fileLocation)
   return fetch(window.location.toString() + fileLocation)
     .then(response => response.text())
 }
@@ -26,7 +25,6 @@ for (row of splitTileList.slice(1, splitTileList.length - 1)) {
   }
   tileList.push(splitRow)
 }
-console.log(tileList)
 
 metadataXml = new DOMParser().parseFromString(await loadFileFromServer("examples/images/level/" + tileMetadataFileName), "text/xml")
 tileSheetMetadata = metadataXml.getElementsByTagName("tileset")[0]
@@ -53,13 +51,13 @@ const Application = PIXI.Application,
 
 //Create a Pixi Application
 const app = new Application({ 
-    width: 512, 
-    height: 512,                       
+    width: tileList.length * 32, 
+    height: tileList[0].length * 32,                       
     antialias: true, 
     transparent: false, 
     resolution: 1
   }
-);
+)
 
 //Add the canvas that Pixi automatically created for you to the HTML document
 document.body.appendChild(app.view);
@@ -147,10 +145,6 @@ function getSpriteFromId(id) {
   id -= 1
   rowNumber = Math.floor(id / tileColumns)
   columnNumber = id - rowNumber * tileColumns
-  console.log("id " + id)
-  console.log("tile columns " + tileColumns)
-  console.log("row number " + rowNumber)
-  console.log("column number " + columnNumber)
 
   horizontalSpacing = 1 + columnNumber
   verticalSpacing = 1 + rowNumber
@@ -381,7 +375,7 @@ function play(delta) {
   explorer.y += explorer.vy;
 
   //Contain the explorer inside the area of the dungeon
-  contain(explorer, {x: 10, y: 10, width: 500, height: 500});
+  contain(explorer, {x: 10, y: 10, width: app.renderer.screen.width, height: app.renderer.screen.height});
 
   //Check for a collision between the explorer and the treasure
   if (hitTestRectangle(explorer, treasure)) {
