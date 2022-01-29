@@ -456,8 +456,8 @@ function play(delta) {
   //world.camera.y = 64
 
   for (tile of world.tiles) {
-    tile.sprite.x = tile.x - world.camera.x
-    tile.sprite.y = tile.y - world.camera.y
+    tile.sprite.x = tile.x - Math.round(world.camera.x)
+    tile.sprite.y = tile.y - Math.round(world.camera.y)
   }
   player.spriteContainer.x = player.x - world.camera.x
   player.spriteContainer.y = player.y - world.camera.y
