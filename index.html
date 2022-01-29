@@ -13,7 +13,7 @@ async function loadFileFromServer(fileLocation) {
 }
 
 async function main() {
-desertMapXmlDoc = new DOMParser().parseFromString(await loadFileFromServer("examples/images/level/testing.tmx"), "text/xml")
+desertMapXmlDoc = new DOMParser().parseFromString(await loadFileFromServer("examples/images/level/desert.tmx"), "text/xml")
 tileMetadataFileName = desertMapXmlDoc.getElementsByTagName("map")[0].getElementsByTagName("tileset")[0].getAttribute("source")
 tileListRaw = desertMapXmlDoc.getElementsByTagName("map")[0].getElementsByTagName("layer")[0].getElementsByTagName("data")[0].innerHTML
 splitTileList = tileListRaw.split("\n")
@@ -68,8 +68,8 @@ const Application = PIXI.Application,
 
 //Create a Pixi Application
 const app = new Application({ 
-    width: tileList.length * 32, 
-    height: tileList[0].length * 32,                       
+    width: 512, 
+    height: 512,                       
     antialias: true, 
     transparent: false, 
     resolution: 1
@@ -86,11 +86,10 @@ loader
 
 //Define variables that might be used in more 
 //than one function
-let state, explorer, treasure, blobs, chimes, exit, player, dungeon,
+let state, treasure, blobs, chimes, exit, dungeon,
     door, healthBar, message, gameScene, gameOverScene, enemies, id;
 
 let directions = ['left', 'right', 'up', 'down']
-let explorerSizeModifier = .75
 let maxPlayerVelocity = 5
 let acceleration = .6
 let reverseAccelerationFactor = 4
@@ -101,42 +100,9 @@ const leftKey = keyboard(37),
     rightKey = keyboard(39),
     downKey = keyboard(40);
 
-function drawRectAroundExplorer() {
-  graphics = new PIXI.Graphics();
-  graphics.lineStyle(1, 0xFF0000);
-  graphics.drawRect(0, 0, explorer.width, explorer.height);
-  explorer.addChild(graphics);
-}
 
-function setupExplorer() {
-  for (d of directions) {
-    walkAnimation = new AnimatedSprite(animations["walk" + d])
-    walkAnimation.animationSpeed = .15
-    walkAnimation.visible = false
-    walkAnimation.width = walkAnimation.width * explorerSizeModifier
-    walkAnimation.height = walkAnimation.height * explorerSizeModifier
 
-    explorer.addChild(walkAnimation)
-
-    faceSprite = new Sprite(id["face" + d + ".png"])
-    faceSprite.visible = false
-    faceSprite.width = faceSprite.width * explorerSizeModifier
-    faceSprite.height = faceSprite.height * explorerSizeModifier
-    explorer.addChild(faceSprite)
-
-    explorer[d] = { face: faceSprite, walk: walkAnimation }
-  }
-
-  explorer.currentAnimation = explorer['up'].face
-  explorer.currentAnimation.visible = true
-  explorer.direction = 'up'
-  
-  if (true) {
-    drawRectAroundExplorer()
-  }
-}
-
-function setDirectionToAnySingleKeyThatIsCurrentlyDown() {
+function setDirectionToAnySingleKeyThatIsCurrentlyDown(player) {
   count = 0
   count += leftKey.isDown ? 1 : 0
   count += rightKey.isDown ? 1 : 0
@@ -148,13 +114,13 @@ function setDirectionToAnySingleKeyThatIsCurrentlyDown() {
   }
 
   if (leftKey.isDown) {
-    explorer.direction = "left"
+    player.direction = "left"
   } else if (rightKey.isDown) {
-    explorer.direction = "right"
+    player.direction = "right"
   } else if (upKey.isDown) {
-    explorer.direction = "up"
+    player.direction = "up"
   } else if (downKey.isDown) {
-    explorer.direction = "down"
+    player.direction = "down"
   }
 }
 
@@ -172,7 +138,65 @@ function getSpriteFromId(id) {
   return new Sprite(new Texture(resources["examples/images/level/tmw_desert_spacing.png"].texture, new Rectangle(xPosition, yPosition, 32, 32)))
 }
 
-let collisionRects = []
+const world = {
+    collisionRects: [],
+    player: {
+      sizeModifier: .75,
+      x: 50,
+      y: 50,
+      vx: 0,
+      vy: 0,
+      spriteContainer: null,
+      spriteDirections: {},
+      direction: 'up',
+      currentAnimation:  null,
+      height: 48,
+      width: 26,
+    },
+    camera: {
+      x: 0,
+      y: 0,
+    },
+    tiles: [] 
+
+}
+
+function setupPlayerSprites(player) {
+  c = new Container()
+  player.spriteContainer = c
+
+
+  for (d of directions) {
+    walkAnimation = new AnimatedSprite(animations["walk" + d])
+    walkAnimation.animationSpeed = .15
+    walkAnimation.visible = false
+    walkAnimation.width = walkAnimation.width * player.sizeModifier
+    walkAnimation.height = walkAnimation.height * player.sizeModifier
+
+    c.addChild(walkAnimation)
+
+    faceSprite = new Sprite(id["face" + d + ".png"])
+    faceSprite.visible = false
+    faceSprite.width = faceSprite.width * player.sizeModifier
+    faceSprite.height = faceSprite.height * player.sizeModifier
+    c.addChild(faceSprite)
+
+    player.spriteDirections[d] = { face: faceSprite, walk: walkAnimation }
+  }
+
+  player.currentAnimation = player.spriteDirections['up'].face
+  player.currentAnimation.visible = true
+  
+  // draw rect around player
+  if (true) {
+    graphics = new PIXI.Graphics();
+    graphics.lineStyle(1, 0xFF0000);
+    graphics.drawRect(0, 0, player.width, player.height);
+    c.addChild(graphics);
+  }
+}
+
+
 function setup() {
 
   //Make the game scene and add it to the stage
@@ -195,15 +219,23 @@ function setup() {
   for (tRow of tileList) {
     let xPosition = 0
     for (tileId of tRow) {        
-      sprite = getSpriteFromId(parseInt(tileId))
-      sprite.x = xPosition
-      sprite.y = yPosition
-      gameScene.addChild(sprite)
+      tile = {}
+      spriteContainer = new Container()
+      tile.sprite = spriteContainer
+      tile.x = xPosition
+      tile.y = yPosition
+
+      world.tiles.push(tile)
+
+      gameScene.addChild(spriteContainer)
+
+      spriteContainer.addChild(getSpriteFromId(parseInt(tileId)))
       newTileId = (parseInt(tileId) - 1).toString()
       let rects = tileCollisionMapById[newTileId]
       if (rects !== undefined) {
         for (r of rects) {
-          collisionRects.push({x: r.x + xPosition, y: r.y + yPosition, width: r.width, height: r.height})
+          spriteContainer.addChild(createCollisionRect(r))
+          world.collisionRects.push({x: r.x + xPosition, y: r.y + yPosition, width: r.width, height: r.height})
         }
       }
 
@@ -212,25 +244,6 @@ function setup() {
     yPosition += 32
   }
 
-  for (r of collisionRects) {
-    gameScene.addChild(createCollisionRect(r))
-  }
-
-  //Door
-  door = new Sprite(id["door.png"]); 
-  door.position.set(32, 0);
-  gameScene.addChild(door);
-
-  explorer = new Container();
-  setupExplorer()
-
-  explorer.x = 68;
-  explorer.y = gameScene.height / 2 - explorer.height / 2;
-  explorer.vx = 0;
-  explorer.vy = 0;
-
-  gameScene.addChild(explorer);
-  
   //Treasure
   treasure = new Sprite(id["treasure.png"]);
   treasure.x = gameScene.width - treasure.width - 48;
@@ -257,7 +270,7 @@ function setup() {
   gameOverScene.addChild(message);
 
   leftKey.press = function() {
-    explorer.direction = 'left'
+    world.player.direction = 'left'
   };
 
   leftKey.release = function() {
@@ -266,21 +279,21 @@ function setup() {
 
   //Right
   rightKey.press = function() {
-    explorer.direction = 'right'
+    world.player.direction = 'right'
   };
   rightKey.release = function() {
   };
 
   //Up
   upKey.press = function() {
-    explorer.direction = 'up'
+    world.player.direction = 'up'
   };
   upKey.release = function() {
   };
 
   //Down
   downKey.press = function() {
-    explorer.direction = 'down'
+    world.player.direction = 'down'
   };
   downKey.release = function() {
   };
@@ -292,27 +305,30 @@ function setup() {
   //Start the game loop 
   app.ticker.add((delta) => gameLoop(delta));
 
+  setupPlayerSprites(world.player)
+  gameScene.addChild(world.player.spriteContainer)
+
 }
 
 function gameLoop(delta) {
   state(delta);
 }
 
-function setExplorerAnimation() {
-  directionalChoice = explorer[explorer.direction]
-  if (explorer.vx != 0 || explorer.vy != 0) {
+function setPlayerAnimation(player) {
+  directionalChoice = player.spriteDirections[world.player.direction]
+  if (player.vx != 0 || player.vy != 0) {
     newAnimation = directionalChoice.walk
   } else {
     newAnimation = directionalChoice.face
   }
 
-  if (newAnimation === explorer.currentAnimation) {
+  if (newAnimation === player.currentAnimation) {
     return
   }
 
-  explorer.currentAnimation.visible = false
-  if (explorer.currentAnimation instanceof AnimatedSprite) {
-    explorer.currentAnimation.stop()
+  player.currentAnimation.visible = false
+  if (player.currentAnimation instanceof AnimatedSprite) {
+    player.currentAnimation.stop()
   }
 
   newAnimation.visible = true
@@ -320,123 +336,137 @@ function setExplorerAnimation() {
     newAnimation.gotoAndPlay(0)
   }
 
-  explorer.currentAnimation = newAnimation
+  player.currentAnimation = newAnimation
 }
 
-function setNewExplorerVelocityBasedOnKeys() {
+function setNewPlayerVelocityBasedOnKeys(player) {
   if (leftKey.isDown) {
-    if (explorer.vx <= 0) {
-      if (Math.abs(explorer.vx - acceleration ) < maxPlayerVelocity) {
-        explorer.vx -= acceleration
+    if (player.vx <= 0) {
+      if (Math.abs(player.vx - acceleration ) < maxPlayerVelocity) {
+        player.vx -= acceleration
       } 
     } else {
-      explorer.vx -= acceleration * reverseAccelerationFactor
+      player.vx -= acceleration * reverseAccelerationFactor
     }
   }
 
   if (rightKey.isDown) {
-    if (explorer.vx >= 0) {
-      if (Math.abs(explorer.vx + acceleration) < maxPlayerVelocity) {
-        explorer.vx += acceleration
+    if (player.vx >= 0) {
+      if (Math.abs(player.vx + acceleration) < maxPlayerVelocity) {
+        player.vx += acceleration
       }
     } else {
-      explorer.vx += acceleration * reverseAccelerationFactor
+      player.vx += acceleration * reverseAccelerationFactor
     }
   }
 
   //if not attempting to move, try to reverse direction and get back to zero
-  if (leftKey.isUp && rightKey.isUp && explorer.vx != 0) {
-    if (explorer.vx > 0) {
-      if (explorer.vx - acceleration * reverseAccelerationFactor < 0) {
-        explorer.vx = 0
+  if (leftKey.isUp && rightKey.isUp && player.vx != 0) {
+    if (player.vx > 0) {
+      if (player.vx - acceleration * reverseAccelerationFactor < 0) {
+        player.vx = 0
       } else {
-        explorer.vx -= acceleration * reverseAccelerationFactor
+        player.vx -= acceleration * reverseAccelerationFactor
       }
     } else {
-      if (explorer.vx + acceleration * reverseAccelerationFactor > 0) {
-        explorer.vx = 0
+      if (player.vx + acceleration * reverseAccelerationFactor > 0) {
+        player.vx = 0
       } else {
-        explorer.vx += acceleration * reverseAccelerationFactor
+        player.vx += acceleration * reverseAccelerationFactor
       }
     }
   }
 
   if (upKey.isDown) {
-    if (explorer.vy <= 0) {
-      if (Math.abs(explorer.vy - acceleration ) < maxPlayerVelocity) {
-        explorer.vy -= acceleration
+    if (player.vy <= 0) {
+      if (Math.abs(player.vy - acceleration ) < maxPlayerVelocity) {
+        player.vy -= acceleration
       } 
     } else {
-      explorer.vy -= acceleration * reverseAccelerationFactor
+      player.vy -= acceleration * reverseAccelerationFactor
     }
   }
 
   if (downKey.isDown) {
-    if (explorer.vy >= 0) {
-      if (Math.abs(explorer.vy + acceleration) < maxPlayerVelocity) {
-        explorer.vy += acceleration
+    if (player.vy >= 0) {
+      if (Math.abs(player.vy + acceleration) < maxPlayerVelocity) {
+        player.vy += acceleration
       }
     } else {
-      explorer.vy += acceleration * reverseAccelerationFactor
+      player.vy += acceleration * reverseAccelerationFactor
     }
   }
 
   //if not attempting to move, try to reverse direction and get back to zero
-  if (upKey.isUp && downKey.isUp && explorer.vy != 0) {
-    if (explorer.vy > 0) {
-      if (explorer.vy - acceleration * reverseAccelerationFactor < 0) {
-        explorer.vy = 0
+  if (upKey.isUp && downKey.isUp && player.vy != 0) {
+    if (player.vy > 0) {
+      if (player.vy - acceleration * reverseAccelerationFactor < 0) {
+        player.vy = 0
       } else {
-        explorer.vy -= acceleration * reverseAccelerationFactor
+        player.vy -= acceleration * reverseAccelerationFactor
       }
     } else {
-      if (explorer.vy + acceleration * reverseAccelerationFactor > 0) {
-        explorer.vy = 0
+      if (player.vy + acceleration * reverseAccelerationFactor > 0) {
+        player.vy = 0
       } else {
-        explorer.vy += acceleration * reverseAccelerationFactor
+        player.vy += acceleration * reverseAccelerationFactor
       }
     }
   }
 }
 
-let explorerPos = {x: 100, y: 100, width: 29, height: 50}
-
 function play(delta) {
-  setDirectionToAnySingleKeyThatIsCurrentlyDown()
-  setNewExplorerVelocityBasedOnKeys()
-  setExplorerAnimation()
+  player = world.player
+  setDirectionToAnySingleKeyThatIsCurrentlyDown(player)
+  setNewPlayerVelocityBasedOnKeys(player)
+  setPlayerAnimation(player)
 
-  //use the explorer's velocity to make it move
-  previousX = explorerPos.x
-  previousY = explorerPos.y
-  explorerPos.x += explorer.vx;
-  explorerPos.y += explorer.vy;
+  //use the player's velocity to make it move
+  previousX = player.x
+  previousY = player.y
+  player.x += player.vx;
+  player.y += player.vy;
 
-  //Contain the explorer inside the area of the dungeon
-  for (r of collisionRects) {
-    if (hitTestRectangle({x: explorerPos.x, y: explorerPos.y, width: explorerPos.width, height: explorerPos.height }, r)) {
-      explorerPos.x = previousX
-      explorerPos.y = previousY
-      console.log("finally", explorerPos)
+  //Contain the player inside the area of the dungeon
+  for (r of world.collisionRects) {
+    if (hitTestRectangle({x: player.x, y: player.y, width: player.width, height: player.height }, r)) {
+      player.x = previousX
+      player.y = previousY
     }
   }
-  explorer.x = explorerPos.x
-  explorer.y = explorerPos.y
 
 
-  //Check for a collision between the explorer and the treasure
-  //if (hitTestRectangle(explorer, treasure)) {
+  //Check for a collision between the player and the treasure
+  //if (hitTestRectangle(player, treasure)) {
 
-  //  //If the treasure is touching the explorer, center it over the explorer
-  //  treasure.x = explorer.x + 8;
-  //  treasure.y = explorer.y + 8;
+  //  //If the treasure is touching the player, center it over the player
+  //  treasure.x = player.x + 8;
+  //  treasure.y = player.y + 8;
   //}
-  //If the explorer has brought the treasure to the exit,
+  //If the player has brought the treasure to the exit,
   //end the game and display "You won!"
   //if (hitTestRectangle(treasure, door)) {
   //  state = end;
   //  message.text = "You won!";
   //} 
+
+  world.camera.x = player.x - (256) + player.width / 2
+  world.camera.y = player.y - (256) + player.height / 2
+  //world.camera.x = 64
+  //world.camera.y = 64
+
+  for (tile of world.tiles) {
+    tile.sprite.x = tile.x - world.camera.x
+    tile.sprite.y = tile.y - world.camera.y
+  }
+  player.spriteContainer.x = player.x - world.camera.x
+  player.spriteContainer.y = player.y - world.camera.y
+
+
+
+
+
+
 }
 
 function end() {
@@ -462,7 +492,6 @@ function hitTestRectangle(r1, r2) {
     return false
   }
 
-  console.log("HIT", r1, r2)
   return true
 };
 
