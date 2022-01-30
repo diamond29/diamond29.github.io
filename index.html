@@ -152,6 +152,15 @@ const world = {
       currentAnimation:  null,
       height: 48,
       width: 26,
+      footCollisionYOffset: 32,
+      getFootCollisionRect() {
+        return {
+           x: this.x,
+           width: this.width,
+           y: this.footCollisionYOffset + this.y,
+           height: this.height - this.footCollisionYOffset,
+        }
+      },
     },
     camera: {
       x: 0,
@@ -192,6 +201,9 @@ function setupPlayerSprites(player) {
     graphics = new PIXI.Graphics();
     graphics.lineStyle(1, 0xFF0000);
     graphics.drawRect(0, 0, player.width, player.height);
+
+    footCollisionRect = player.getFootCollisionRect()
+    graphics.drawRect(0, player.footCollisionYOffset, player.width, player.height - player.footCollisionYOffset)
     c.addChild(graphics);
   }
 }
@@ -429,7 +441,7 @@ function play(delta) {
 
   //Contain the player inside the area of the dungeon
   for (r of world.collisionRects) {
-    if (hitTestRectangle({x: player.x, y: player.y, width: player.width, height: player.height }, r)) {
+    if (hitTestRectangle(player.getFootCollisionRect(), r)) {
       player.x = previousX
       player.y = previousY
     }
