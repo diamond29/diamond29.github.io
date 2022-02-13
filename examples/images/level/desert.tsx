@@ -17,6 +17,11 @@
    <object id="1" x="15.9689" y="0.127751" width="5.74882" height="31.8101"/>
   </objectgroup>
  </tile>
+ <tile id="10">
+  <objectgroup draworder="index" id="2">
+   <object id="1" x="10.8696" y="0.127877" width="4.73146" height="31.7136"/>
+  </objectgroup>
+ </tile>
  <tile id="24">
   <objectgroup draworder="index" id="2">
    <object id="1" x="12.9555" y="13.1548" width="6.04588" height="19.1342"/>
@@ -58,7 +63,11 @@
    <object id="2" x="13.0219" y="13.0219" width="8.23835" height="18.7356"/>
   </objectgroup>
  </tile>
- <tile id="37" probability="0.01"/>
+ <tile id="37" probability="0.01">
+  <animation>
+   <frame tileid="37" duration="100"/>
+  </animation>
+ </tile>
  <tile id="38" probability="0.01"/>
  <tile id="39" probability="0.01"/>
  <tile id="40">
