@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.5" tiledversion="1.7.2" name="Desert" tilewidth="32" tileheight="32" spacing="1" margin="1" tilecount="48" columns="8">
+<tileset version="1.8" tiledversion="1.8.1" name="Desert" tilewidth="32" tileheight="32" spacing="1" margin="1" tilecount="48" columns="8">
  <image source="tmw_desert_spacing.png" width="265" height="199"/>
  <tile id="0">
   <objectgroup draworder="index" id="2">
@@ -10,6 +10,11 @@
  <tile id="1">
   <objectgroup draworder="index" id="2">
    <object id="5" x="0.0909091" y="16.1818" width="31.8182" height="5.63636"/>
+  </objectgroup>
+ </tile>
+ <tile id="8">
+  <objectgroup draworder="index" id="2">
+   <object id="1" x="15.9689" y="0.127751" width="5.74882" height="31.8101"/>
   </objectgroup>
  </tile>
  <tile id="24">
