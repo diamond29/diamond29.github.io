@@ -5,6 +5,14 @@
 <title>Treasure hunter</title>
 </head>
 <body>
+<div id="gameDiv"></div>
+<div id="instructions" style="font-family:monospace; white-space:pre-wrap;">
+  up arrow    = move up
+  down arrow  = move down
+  left arrow  = move left
+  right arrow = move right
+  space bar   = attack
+</div>
 <script src="../pixi/pixi.min.js"></script>
 <script>
 async function loadFileFromServer(fileLocation) {
@@ -75,9 +83,10 @@ const app = new Application({
     resolution: 1
   }
 )
+console.log(app.view)
 
 //Add the canvas that Pixi automatically created for you to the HTML document
-document.body.appendChild(app.view);
+document.getElementById("gameDiv").appendChild(app.view);
 
 loader
   .add("examples/images/treasureHunter.json")
@@ -98,7 +107,8 @@ let reverseAccelerationFactor = 4
 const leftKey = keyboard(37),
     upKey = keyboard(38),
     rightKey = keyboard(39),
-    downKey = keyboard(40);
+    downKey = keyboard(40),
+    spaceKey = keyboard(32);
 
 
 
@@ -153,6 +163,8 @@ const world = {
       height: 48,
       width: 26,
       footCollisionYOffset: 32,
+      attacking: false,
+      attackingFrame: 0,
       getFootCollisionRect() {
         return {
            x: this.x,
@@ -285,30 +297,22 @@ function setup() {
     world.player.direction = 'left'
   };
 
-  leftKey.release = function() {
-    
-  };
-
   //Right
   rightKey.press = function() {
     world.player.direction = 'right'
-  };
-  rightKey.release = function() {
   };
 
   //Up
   upKey.press = function() {
     world.player.direction = 'up'
   };
-  upKey.release = function() {
-  };
 
   //Down
   downKey.press = function() {
     world.player.direction = 'down'
   };
-  downKey.release = function() {
-  };
+
+  spaceKey.press = () => { world.player.attacking = true }
 
   //Set the game state
   state = play;
@@ -447,25 +451,60 @@ function play(delta) {
     }
   }
 
+  if (player.attacking) {
+    weaponWidth = 20
+    weaponLength = 30
+    actualWidth = 0
+    actualHeight = 0
 
-  //Check for a collision between the player and the treasure
-  //if (hitTestRectangle(player, treasure)) {
+    if (player.attackingFrame == 0) {
+      weaponX = 0
+      weaponY = 0
 
-  //  //If the treasure is touching the player, center it over the player
-  //  treasure.x = player.x + 8;
-  //  treasure.y = player.y + 8;
-  //}
-  //If the player has brought the treasure to the exit,
-  //end the game and display "You won!"
-  //if (hitTestRectangle(treasure, door)) {
-  //  state = end;
-  //  message.text = "You won!";
-  //} 
+      if (player.direction == 'left' || player.direction == 'right') {
+        actualWidth = weaponLength
+        actualHeight = weaponWidth
+
+        weaponY = player.height / 2 - actualHeight / 2
+
+        if (player.direction == 'left') {
+          weaponX = -1 * actualWidth
+        } else {
+          weaponX = player.width
+        }
+      } else {
+        actualWidth = weaponWidth
+        actualHeight = weaponLength
+
+        weaponX = player.width / 2 - actualWidth / 2
+
+        if (player.direction == 'up') {
+          weaponY = -1 * actualHeight
+        } else {
+          weaponY = player.height
+        }
+      }
+
+      graphics = new PIXI.Graphics();
+      graphics.beginFill(0xFF0000);
+      graphics.drawRect(weaponX, weaponY, actualWidth, actualHeight);
+      graphics.endFill()
+      player.attackingSprite = graphics
+      player.spriteContainer.addChild(graphics)
+    }
+    player.attackingFrame++
+    
+    if (player.attackingFrame > 10) {
+      player.attackingSprite.parent.removeChild(player.attackingSprite)
+      player.attackingSprite = null
+      player.attacking = false
+      player.attackingFrame = 0
+    }
+  }
+
 
   world.camera.x = player.x - (256) + player.width / 2
   world.camera.y = player.y - (256) + player.height / 2
-  //world.camera.x = 64
-  //world.camera.y = 64
 
   for (tile of world.tiles) {
     tile.sprite.x = tile.x - Math.round(world.camera.x)
@@ -473,12 +512,6 @@ function play(delta) {
   }
   player.spriteContainer.x = player.x - world.camera.x
   player.spriteContainer.y = player.y - world.camera.y
-
-
-
-
-
-
 }
 
 function end() {
