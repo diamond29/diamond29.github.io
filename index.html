@@ -35,7 +35,7 @@ for (row of splitTileList.slice(1, splitTileList.length - 1)) {
 }
 // start loading tilesets
 tilesetNodes = desertMapXmlDoc.getElementsByTagName("map")[0].getElementsByTagName("tileset")
-tileMetadataFileInfo = {}
+let tileMetadataFileInfo = {}
 for (node of tilesetNodes) {
   metadataXml = new DOMParser().parseFromString(await loadFileFromServer("examples/images/level/" + node.getAttribute("source")), "text/xml")
   tileSheetMetadata = metadataXml.getElementsByTagName("tileset")[0]
@@ -119,8 +119,6 @@ const leftKey = keyboard(37),
     downKey = keyboard(40),
     spaceKey = keyboard(32);
 
-
-
 function setDirectionToAnySingleKeyThatIsCurrentlyDown(player) {
   count = 0
   count += leftKey.isDown ? 1 : 0
@@ -143,18 +141,38 @@ function setDirectionToAnySingleKeyThatIsCurrentlyDown(player) {
   }
 }
 
-function getSpriteFromId(id) {
-  id -= 1
-  rowNumber = Math.floor(id / tileColumns)
-  columnNumber = id - rowNumber * tileColumns
+function getSpriteFromId(gidFromTileList) {
+  tileMetadataToUse = null
+  gidOfTileMetadata = 0
+
+  gidsFromFileInfos = Object.keys(tileMetadataFileInfo)
+  gidsFromFileInfos.sort((a, b) => parseInt(b) - parseInt(a))
+  for (gid of gidsFromFileInfos) {
+    if (parseInt(gid) <= parseInt(gidFromTileList)) {
+      gidOfTileMetadata = gid
+      tileMetadataToUse = tileMetadataFileInfo[gid]
+      break
+    }
+  }
+
+  console.log(gidFromTileList, tileMetadataToUse)
+
+  idInTilesheet = gidFromTileList - gidOfTileMetadata
+
+  console.log(tileMetadataToUse)
+  rowNumber = Math.floor(idInTilesheet / parseInt(tileMetadataToUse.tilecolumns))
+  columnNumber = idInTilesheet - rowNumber * parseInt(tileMetadataToUse.tilecolumns)
 
   horizontalSpacing = 1 + columnNumber
   verticalSpacing = 1 + rowNumber
 
   xPosition = horizontalSpacing + columnNumber * 32
   yPosition = verticalSpacing + rowNumber * 32
-
-  return new Sprite(new Texture(resources["examples/images/level/tmw_desert_spacing.png"].texture, new Rectangle(xPosition, yPosition, 32, 32)))
+  // console.log(columnNumber, rowNumber)
+  // console.log(xPosition, yPosition)
+  console.log(tileMetadataToUse)
+  
+  return new Sprite(new Texture(resources["examples/images/level/" + tileMetadataToUse.imageFileName].texture, new Rectangle(xPosition, yPosition, 32, 32)))
 }
 
 const world = {
@@ -263,14 +281,14 @@ function setup() {
       gameScene.addChild(spriteContainer)
 
       spriteContainer.addChild(getSpriteFromId(parseInt(tileId)))
-      newTileId = (parseInt(tileId) - 1).toString()
-      let rects = tileCollisionMapById[newTileId]
-      if (rects !== undefined) {
-        for (r of rects) {
-          spriteContainer.addChild(createCollisionRect(r))
-          world.collisionRects.push({x: r.x + xPosition, y: r.y + yPosition, width: r.width, height: r.height})
-        }
-      }
+      //newTileId = (parseInt(tileId) - 1).toString()
+      //let rects = tileCollisionMapById[newTileId]
+      //if (rects !== undefined) {
+      //  for (r of rects) {
+      //    spriteContainer.addChild(createCollisionRect(r))
+      //    world.collisionRects.push({x: r.x + xPosition, y: r.y + yPosition, width: r.width, height: r.height})
+      //  }
+      //}
 
       xPosition += 32
     }
