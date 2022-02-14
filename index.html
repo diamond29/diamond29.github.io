@@ -22,7 +22,7 @@ async function loadFileFromServer(fileLocation) {
 
 async function main() {
 desertMapXmlDoc = new DOMParser().parseFromString(await loadFileFromServer("examples/images/level/desert.tmx"), "text/xml")
-tileMetadataFileName = desertMapXmlDoc.getElementsByTagName("map")[0].getElementsByTagName("tileset")[0].getAttribute("source")
+// load world tileset map
 tileListRaw = desertMapXmlDoc.getElementsByTagName("map")[0].getElementsByTagName("layer")[0].getElementsByTagName("data")[0].innerHTML
 splitTileList = tileListRaw.split("\n")
 let tileList = []
@@ -33,15 +33,21 @@ for (row of splitTileList.slice(1, splitTileList.length - 1)) {
   }
   tileList.push(splitRow)
 }
-
-metadataXml = new DOMParser().parseFromString(await loadFileFromServer("examples/images/level/" + tileMetadataFileName), "text/xml")
-tileSheetMetadata = metadataXml.getElementsByTagName("tileset")[0]
-
-let tileWidth = tileSheetMetadata.getAttribute("tileWidth")
-let tileHeight = tileSheetMetadata.getAttribute("tileWidth")
-let tileSpacing = tileSheetMetadata.getAttribute("spacing")
-let tileColumns = tileSheetMetadata.getAttribute("columns")
-tileSheetFileName = tileSheetMetadata.getElementsByTagName("image")[0].getAttribute("source")
+// start loading tilesets
+tilesetNodes = desertMapXmlDoc.getElementsByTagName("map")[0].getElementsByTagName("tileset")
+tileMetadataFileInfo = {}
+for (node of tilesetNodes) {
+  metadataXml = new DOMParser().parseFromString(await loadFileFromServer("examples/images/level/" + node.getAttribute("source")), "text/xml")
+  tileSheetMetadata = metadataXml.getElementsByTagName("tileset")[0]
+  tileMetadataFileInfo[node.getAttribute("firstgid")] = {
+    SheetName: node.getAttribute("source"),
+    tilewidth: tileSheetMetadata.getAttribute("tilewidth"),
+    tileheight: tileSheetMetadata.getAttribute("tileheight"),
+    tilespacing: tileSheetMetadata.getAttribute("spacing"),
+    tilecolumns: tileSheetMetadata.getAttribute("columns"),
+    imageFileName: tileSheetMetadata.getElementsByTagName("image")[0].getAttribute("source")
+  }
+}
 
 let tileCollisionMapById = {}
 for (tile of tileSheetMetadata.getElementsByTagName("tile")) {
@@ -83,14 +89,17 @@ const app = new Application({
     resolution: 1
   }
 )
-console.log(app.view)
 
 //Add the canvas that Pixi automatically created for you to the HTML document
 document.getElementById("gameDiv").appendChild(app.view);
 
 loader
   .add("examples/images/treasureHunter.json")
-  .add("examples/images/level/" + tileSheetFileName)
+  for (gid in tileMetadataFileInfo){
+    loader.add("examples/images/level/" + tileMetadataFileInfo[gid].imageFileName)
+  }
+
+loader
   .load(setup);
 
 //Define variables that might be used in more 
