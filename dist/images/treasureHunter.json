@@ -1,0 +1,226 @@
+{"frames": {
+
+"blob.png":
+{
+	"frame": {"x":0,"y":0,"w":32,"h":24},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":32,"h":24},
+	"sourceSize": {"w":32,"h":24}
+},
+"door.png":
+{
+	"frame": {"x":60,"y":0,"w":32,"h":32},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":32,"h":32},
+	"sourceSize": {"w":32,"h":32}
+},
+"dungeon.png":
+{
+	"frame": {"x":0,"y":143,"w":512,"h":512},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":512,"h":512},
+	"sourceSize": {"w":512,"h":512}
+},
+"explorer.png":
+{
+	"frame": {"x":92,"y":0,"w":21,"h":32},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":21,"h":32},
+	"sourceSize": {"w":21,"h":32}
+},
+"facedown.png":
+{
+	"frame": {"x":113,"y":0,"w":34,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":34,"h":64},
+	"sourceSize": {"w":34,"h":64}
+},
+"faceleft.png":
+{
+	"frame": {"x":147,"y":0,"w":34,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":34,"h":64},
+	"sourceSize": {"w":34,"h":64}
+},
+"faceright.png":
+{
+	"frame": {"x":181,"y":0,"w":34,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":34,"h":64},
+	"sourceSize": {"w":34,"h":64}
+},
+"faceup.png":
+{
+	"frame": {"x":215,"y":0,"w":34,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":34,"h":64},
+	"sourceSize": {"w":34,"h":64}
+},
+"treasure.png":
+{
+	"frame": {"x":32,"y":0,"w":28,"h":24},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":28,"h":24},
+	"sourceSize": {"w":28,"h":24}
+},
+"walkdown_01.png":
+{
+	"frame": {"x":249,"y":0,"w":38,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":38,"h":64},
+	"sourceSize": {"w":38,"h":64}
+},
+"walkdown_02.png":
+{
+	"frame": {"x":140,"y":64,"w":38,"h":66},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":38,"h":66},
+	"sourceSize": {"w":38,"h":66}
+},
+"walkdown_03.png":
+{
+	"frame": {"x":287,"y":0,"w":38,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":38,"h":64},
+	"sourceSize": {"w":38,"h":64}
+},
+"walkdown_04.png":
+{
+	"frame": {"x":178,"y":64,"w":38,"h":66},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":38,"h":66},
+	"sourceSize": {"w":38,"h":66}
+},
+"walkleft_01.png":
+{
+	"frame": {"x":216,"y":64,"w":34,"h":68},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":34,"h":68},
+	"sourceSize": {"w":34,"h":68}
+},
+"walkleft_02.png":
+{
+	"frame": {"x":325,"y":0,"w":40,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":40,"h":64},
+	"sourceSize": {"w":40,"h":64}
+},
+"walkleft_03.png":
+{
+	"frame": {"x":250,"y":64,"w":34,"h":68},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":34,"h":68},
+	"sourceSize": {"w":34,"h":68}
+},
+"walkleft_04.png":
+{
+	"frame": {"x":365,"y":0,"w":38,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":38,"h":64},
+	"sourceSize": {"w":38,"h":64}
+},
+"walkright_01.png":
+{
+	"frame": {"x":403,"y":0,"w":38,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":38,"h":64},
+	"sourceSize": {"w":38,"h":64}
+},
+"walkright_02.png":
+{
+	"frame": {"x":284,"y":64,"w":34,"h":68},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":34,"h":68},
+	"sourceSize": {"w":34,"h":68}
+},
+"walkright_03.png":
+{
+	"frame": {"x":441,"y":0,"w":40,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":40,"h":64},
+	"sourceSize": {"w":40,"h":64}
+},
+"walkright_04.png":
+{
+	"frame": {"x":318,"y":64,"w":34,"h":68},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":34,"h":68},
+	"sourceSize": {"w":34,"h":68}
+},
+"walkup_01.png":
+{
+	"frame": {"x":0,"y":64,"w":36,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":36,"h":64},
+	"sourceSize": {"w":36,"h":64}
+},
+"walkup_02.png":
+{
+	"frame": {"x":36,"y":64,"w":34,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":34,"h":64},
+	"sourceSize": {"w":34,"h":64}
+},
+"walkup_03.png":
+{
+	"frame": {"x":70,"y":64,"w":36,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":36,"h":64},
+	"sourceSize": {"w":36,"h":64}
+},
+"walkup_04.png":
+{
+	"frame": {"x":106,"y":64,"w":34,"h":64},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":34,"h":64},
+	"sourceSize": {"w":34,"h":64}
+},
+"wooden_stairs-1.png":
+{
+	"frame": {"x":352,"y":64,"w":44,"h":79},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":44,"h":79},
+	"sourceSize": {"w":44,"h":79}
+}},
+"animations": {
+	"walkdown": ["walkdown_01.png","walkdown_02.png","walkdown_03.png","walkdown_04.png"],
+	"walkleft": ["walkleft_01.png","walkleft_02.png","walkleft_03.png","walkleft_04.png"],
+	"walkright": ["walkright_01.png","walkright_02.png","walkright_03.png","walkright_04.png"],
+	"walkup": ["walkup_01.png","walkup_02.png","walkup_03.png","walkup_04.png"]
+},
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "treasureHunter.png",
+	"format": "RGBA8888",
+	"size": {"w":512,"h":655},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:d27766e32bf5e92a08accfe472f6caf4:390a151a6f995f67ee584c9563da3fbe:9995f8b4db1ac3cb75651b1542df8ee2$"
+}
+}
