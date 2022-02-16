@@ -1,64 +1,50 @@
-<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Treasure hunter</title>
-</head>
-<body>
-<div id="gameDiv"></div>
-<div id="instructions" style="font-family:monospace; white-space:pre-wrap;">
-  up arrow    = move up
-  down arrow  = move down
-  left arrow  = move left
-  right arrow = move right
-  space bar   = attack
-</div>
-<script src="../pixi/pixi.min.js"></script>
-<script>
+import _ from 'lodash';
+import * as PIXI from 'pixi.js'
+
 async function loadFileFromServer(fileLocation) {
   return fetch(window.location.toString() + fileLocation + "?" + Date.now())
     .then(response => response.text())
 }
 
 async function main() {
-desertMapXmlDoc = new DOMParser().parseFromString(await loadFileFromServer("examples/images/level/desert.tmx"), "text/xml")
-tileMetadataFileName = desertMapXmlDoc.getElementsByTagName("map")[0].getElementsByTagName("tileset")[0].getAttribute("source")
-tileListRaw = desertMapXmlDoc.getElementsByTagName("map")[0].getElementsByTagName("layer")[0].getElementsByTagName("data")[0].innerHTML
-splitTileList = tileListRaw.split("\n")
-let tileList = []
-for (row of splitTileList.slice(1, splitTileList.length - 1)) {
-  splitRow = row.split(",")
-  if (splitRow[splitRow.length - 1] === "") {
-    splitRow = splitRow.slice(0, splitRow.length - 1)
-  }
-  tileList.push(splitRow)
-}
-
-metadataXml = new DOMParser().parseFromString(await loadFileFromServer("examples/images/level/" + tileMetadataFileName), "text/xml")
-tileSheetMetadata = metadataXml.getElementsByTagName("tileset")[0]
-
-let tileWidth = tileSheetMetadata.getAttribute("tileWidth")
-let tileHeight = tileSheetMetadata.getAttribute("tileWidth")
-let tileSpacing = tileSheetMetadata.getAttribute("spacing")
-let tileColumns = tileSheetMetadata.getAttribute("columns")
-tileSheetFileName = tileSheetMetadata.getElementsByTagName("image")[0].getAttribute("source")
-
-let tileCollisionMapById = {}
-for (tile of tileSheetMetadata.getElementsByTagName("tile")) {
-  let id = tile.getAttribute("id")
-  tileCollisions = tile.getElementsByTagName("objectgroup")
-  if (tileCollisions.length === 0) continue;
-  for (collisionRect of tile.getElementsByTagName("objectgroup")[0].getElementsByTagName("object")) {
-    if (tileCollisionMapById[id] === undefined) tileCollisionMapById[id] = []
-    rect = {
-      x: Math.round(parseFloat(collisionRect.getAttribute("x"))),
-      y: Math.round(parseFloat(collisionRect.getAttribute("y"))),
-      width: Math.round(parseFloat(collisionRect.getAttribute("width"))),
-      height: Math.round(parseFloat(collisionRect.getAttribute("height"))),
+  const desertMapXmlDoc = new DOMParser().parseFromString(await loadFileFromServer("images/level/desert.tmx"), "text/xml")
+  const tileMetadataFileName = desertMapXmlDoc.getElementsByTagName("map")[0].getElementsByTagName("tileset")[0].getAttribute("source")
+  const tileListRaw = desertMapXmlDoc.getElementsByTagName("map")[0].getElementsByTagName("layer")[0].getElementsByTagName("data")[0].innerHTML
+  const splitTileList = tileListRaw.split("\n")
+  const tileList = []
+  for (const row of splitTileList.slice(1, splitTileList.length - 1)) {
+    let splitRow = row.split(",")
+    if (splitRow[splitRow.length - 1] === "") {
+      splitRow = splitRow.slice(0, splitRow.length - 1)
     }
-    tileCollisionMapById[id].push(rect)
+    tileList.push(splitRow)
   }
-}
+
+  const metadataXml = new DOMParser().parseFromString(await loadFileFromServer("images/level/" + tileMetadataFileName), "text/xml")
+  const tileSheetMetadata = metadataXml.getElementsByTagName("tileset")[0]
+
+  const tileWidth = tileSheetMetadata.getAttribute("tileWidth")
+  const tileHeight = tileSheetMetadata.getAttribute("tileWidth")
+  const tileSpacing = tileSheetMetadata.getAttribute("spacing")
+  const tileColumns = tileSheetMetadata.getAttribute("columns")
+  const tileSheetFileName = tileSheetMetadata.getElementsByTagName("image")[0].getAttribute("source")
+
+  const tileCollisionMapById = {}
+  for (const tile of tileSheetMetadata.getElementsByTagName("tile")) {
+    const id = tile.getAttribute("id")
+    const tileCollisions = tile.getElementsByTagName("objectgroup")
+    if (tileCollisions.length === 0) continue;
+    for (const collisionRect of tile.getElementsByTagName("objectgroup")[0].getElementsByTagName("object")) {
+      if (tileCollisionMapById[id] === undefined) tileCollisionMapById[id] = []
+      const rect = {
+        x: Math.round(parseFloat(collisionRect.getAttribute("x"))),
+        y: Math.round(parseFloat(collisionRect.getAttribute("y"))),
+        width: Math.round(parseFloat(collisionRect.getAttribute("width"))),
+        height: Math.round(parseFloat(collisionRect.getAttribute("height"))),
+      }
+      tileCollisionMapById[id].push(rect)
+    }
+  }
 
 //Aliases
 const Application = PIXI.Application,
@@ -83,20 +69,19 @@ const app = new Application({
     resolution: 1
   }
 )
-console.log(app.view)
 
 //Add the canvas that Pixi automatically created for you to the HTML document
-document.getElementById("gameDiv").appendChild(app.view);
+document.body.appendChild(app.view);
 
 loader
-  .add("examples/images/treasureHunter.json")
-  .add("examples/images/level/" + tileSheetFileName)
+  .add("images/treasureHunter.json")
+  .add("images/level/" + tileSheetFileName)
   .load(setup);
 
 //Define variables that might be used in more 
 //than one function
 let state, treasure, blobs, chimes, exit, dungeon,
-    door, healthBar, message, gameScene, gameOverScene, enemies, id;
+    door, healthBar, message, gameScene, gameOverScene, enemies, id, animations;
 
 let directions = ['left', 'right', 'up', 'down']
 let maxPlayerVelocity = 5
@@ -113,7 +98,7 @@ const leftKey = keyboard(37),
 
 
 function setDirectionToAnySingleKeyThatIsCurrentlyDown(player) {
-  count = 0
+  let count = 0
   count += leftKey.isDown ? 1 : 0
   count += rightKey.isDown ? 1 : 0
   count += downKey.isDown ? 1 : 0
@@ -136,16 +121,16 @@ function setDirectionToAnySingleKeyThatIsCurrentlyDown(player) {
 
 function getSpriteFromId(id) {
   id -= 1
-  rowNumber = Math.floor(id / tileColumns)
-  columnNumber = id - rowNumber * tileColumns
+  const rowNumber = Math.floor(id / tileColumns)
+  const columnNumber = id - rowNumber * tileColumns
 
-  horizontalSpacing = 1 + columnNumber
-  verticalSpacing = 1 + rowNumber
+  const horizontalSpacing = 1 + columnNumber
+  const verticalSpacing = 1 + rowNumber
 
-  xPosition = horizontalSpacing + columnNumber * 32
-  yPosition = verticalSpacing + rowNumber * 32
+  const xPosition = horizontalSpacing + columnNumber * 32
+  const yPosition = verticalSpacing + rowNumber * 32
 
-  return new Sprite(new Texture(resources["examples/images/level/tmw_desert_spacing.png"].texture, new Rectangle(xPosition, yPosition, 32, 32)))
+  return new Sprite(new Texture(resources["images/level/tmw_desert_spacing.png"].texture, new Rectangle(xPosition, yPosition, 32, 32)))
 }
 
 const world = {
@@ -183,12 +168,11 @@ const world = {
 }
 
 function setupPlayerSprites(player) {
-  c = new Container()
+  const c = new Container()
   player.spriteContainer = c
 
-
-  for (d of directions) {
-    walkAnimation = new AnimatedSprite(animations["walk" + d])
+  for (const d of directions) {
+    const walkAnimation = new AnimatedSprite(animations["walk" + d])
     walkAnimation.animationSpeed = .15
     walkAnimation.visible = false
     walkAnimation.width = walkAnimation.width * player.sizeModifier
@@ -196,7 +180,7 @@ function setupPlayerSprites(player) {
 
     c.addChild(walkAnimation)
 
-    faceSprite = new Sprite(id["face" + d + ".png"])
+    const faceSprite = new Sprite(id["face" + d + ".png"])
     faceSprite.visible = false
     faceSprite.width = faceSprite.width * player.sizeModifier
     faceSprite.height = faceSprite.height * player.sizeModifier
@@ -210,11 +194,11 @@ function setupPlayerSprites(player) {
   
   // draw rect around player
   if (true) {
-    graphics = new PIXI.Graphics();
+    const graphics = new PIXI.Graphics();
     graphics.lineStyle(1, 0xFF0000);
     graphics.drawRect(0, 0, player.width, player.height);
 
-    footCollisionRect = player.getFootCollisionRect()
+    const footCollisionRect = player.getFootCollisionRect()
     graphics.drawRect(0, player.footCollisionYOffset, player.width, player.height - player.footCollisionYOffset)
     c.addChild(graphics);
   }
@@ -229,22 +213,22 @@ function setup() {
 
   //Make the sprites and add them to the `gameScene`
   //Create an alias for the texture atlas frame ids
-  id = resources["examples/images/treasureHunter.json"].textures;
-  animations = resources["examples/images/treasureHunter.json"].spritesheet.animations
+  id = resources["images/treasureHunter.json"].textures;
+  animations = resources["images/treasureHunter.json"].spritesheet.animations
 
   function createCollisionRect({x, y, width, height}) {
-    graphics = new PIXI.Graphics();
+    const graphics = new PIXI.Graphics();
     graphics.lineStyle(1, 0xFF0000);
     graphics.drawRect(x, y, width, height);
     return graphics
   }
 
   let yPosition = 0
-  for (tRow of tileList) {
+  for (const tRow of tileList) {
     let xPosition = 0
-    for (tileId of tRow) {        
-      tile = {}
-      spriteContainer = new Container()
+    for (const tileId of tRow) {        
+      const tile = {}
+      const spriteContainer = new Container()
       tile.sprite = spriteContainer
       tile.x = xPosition
       tile.y = yPosition
@@ -254,10 +238,10 @@ function setup() {
       gameScene.addChild(spriteContainer)
 
       spriteContainer.addChild(getSpriteFromId(parseInt(tileId)))
-      newTileId = (parseInt(tileId) - 1).toString()
+      const newTileId = (parseInt(tileId) - 1).toString()
       let rects = tileCollisionMapById[newTileId]
       if (rects !== undefined) {
-        for (r of rects) {
+        for (const r of rects) {
           spriteContainer.addChild(createCollisionRect(r))
           world.collisionRects.push({x: r.x + xPosition, y: r.y + yPosition, width: r.width, height: r.height})
         }
@@ -331,7 +315,9 @@ function gameLoop(delta) {
 }
 
 function setPlayerAnimation(player) {
-  directionalChoice = player.spriteDirections[world.player.direction]
+  const directionalChoice = player.spriteDirections[world.player.direction]
+  let newAnimation;
+
   if (player.vx != 0 || player.vy != 0) {
     newAnimation = directionalChoice.walk
   } else {
@@ -432,19 +418,19 @@ function setNewPlayerVelocityBasedOnKeys(player) {
 }
 
 function play(delta) {
-  player = world.player
+  const player = world.player
   setDirectionToAnySingleKeyThatIsCurrentlyDown(player)
   setNewPlayerVelocityBasedOnKeys(player)
   setPlayerAnimation(player)
 
   //use the player's velocity to make it move
-  previousX = player.x
-  previousY = player.y
+  const previousX = player.x
+  const previousY = player.y
   player.x += player.vx;
   player.y += player.vy;
 
   //Contain the player inside the area of the dungeon
-  for (r of world.collisionRects) {
+  for (const r of world.collisionRects) {
     if (hitTestRectangle(player.getFootCollisionRect(), r)) {
       player.x = previousX
       player.y = previousY
@@ -506,7 +492,7 @@ function play(delta) {
   world.camera.x = player.x - (256) + player.width / 2
   world.camera.y = player.y - (256) + player.height / 2
 
-  for (tile of world.tiles) {
+  for (const tile of world.tiles) {
     tile.sprite.x = tile.x - Math.round(world.camera.x)
     tile.sprite.y = tile.y - Math.round(world.camera.y)
   }
@@ -587,6 +573,3 @@ function keyboard(keyCode) {
 
 main()
 
-</script>
-</body>
-</html>
